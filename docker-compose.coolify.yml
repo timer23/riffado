@@ -46,6 +46,9 @@ services:
     volumes:
       - riffado-audio:/app/audio
       - riffado-storage:/app/storage
+    networks:
+      - default
+      - coolify
     depends_on:
       db:
         condition: service_healthy
@@ -66,3 +69,7 @@ volumes:
   riffado-pgdata:
   riffado-audio:
   riffado-storage:
+
+networks:
+  coolify:
+    external: true
