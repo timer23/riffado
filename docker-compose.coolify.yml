@@ -49,6 +49,12 @@ services:
     networks:
       - default
       - coolify
+    labels:
+      - caddy_0=https://plaud.orangespace.io
+      - caddy_0.reverse_proxy={{upstreams 3000}}
+      - caddy_0.encode=zstd gzip
+      - caddy_0.header=-Server
+      - caddy_ingress_network=coolify
     depends_on:
       db:
         condition: service_healthy
