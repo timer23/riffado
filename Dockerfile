@@ -1,16 +1,21 @@
-# Base image with Bun
-FROM oven/bun:1 AS base
+# Pin Bun. `oven/bun:1` floated to 1.4.0, which migrates `pnpm-lock.yaml`
+# and then fails `--frozen-lockfile` ("lockfile had changes").
+FROM oven/bun:1.4.0 AS base
 WORKDIR /app
 
-# Install dependencies
+# Install with pnpm, matching the package manager used to create the lockfile.
 # `--ignore-scripts` skips the `fumadocs-mdx` postinstall (declared in
 # package.json by PR #131). That hook needs `source.config.ts` and
 # `content/docs/`, which aren't present in this hermetic deps stage --
-# only `package.json` + the lockfile are. We regenerate fumadocs sources
-# explicitly in the builder stage below, where the full tree is available.
-FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
-RUN bun install --frozen-lockfile --ignore-scripts
+# only the package manifests and lockfile are. We regenerate fumadocs
+# sources explicitly in the builder stage below, where the full tree is
+# available.
+FROM node:22.20.0-bookworm-slim AS deps
+WORKDIR /app
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Build Next.js
 FROM base AS builder
