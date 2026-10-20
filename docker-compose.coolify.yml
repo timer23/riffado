@@ -26,6 +26,7 @@ services:
       BETTER_AUTH_SECRET: ${SERVICE_HEX_64_AUTH}
       API_TOKEN_HASH_SECRET: ${SERVICE_HEX_64_API_TOKEN}
       APP_URL: ${APP_URL:?Set APP_URL to the public HTTPS URL}
+      HOSTNAME: "0.0.0.0"
       ENCRYPTION_KEY: ${SERVICE_HEX_32_ENCRYPTION}
       RATE_LIMIT_TRUST_PROXY_HEADERS: "true"
       DISABLE_REGISTRATION: ${DISABLE_REGISTRATION:-false}
@@ -46,15 +47,6 @@ services:
     volumes:
       - riffado-audio:/app/audio
       - riffado-storage:/app/storage
-    networks:
-      - default
-      - coolify
-    labels:
-      - caddy_0=https://plaud.orangespace.io
-      - caddy_0.reverse_proxy={{upstreams 3000}}
-      - caddy_0.encode=zstd gzip
-      - caddy_0.header=-Server
-      - caddy_ingress_network=coolify
     depends_on:
       db:
         condition: service_healthy
@@ -75,7 +67,3 @@ volumes:
   riffado-pgdata:
   riffado-audio:
   riffado-storage:
-
-networks:
-  coolify:
-    external: true
