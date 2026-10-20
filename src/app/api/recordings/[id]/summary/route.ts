@@ -154,7 +154,7 @@ export const POST = apiHandler<IdContext>(async (request, context) => {
         // Pick a lightweight chat model appropriate for the provider
         const baseUrl = credentials.baseUrl || "";
         if (baseUrl.includes("groq")) {
-            model = "llama-3.1-8b-instant";
+            model = "openai/gpt-oss-20b";
         } else if (baseUrl.includes("together")) {
             model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo";
         } else if (baseUrl.includes("openrouter")) {

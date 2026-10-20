@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_64_POSTGRES}
+      POSTGRES_DB: riffado
+    volumes:
+      - riffado-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:${SERVICE_PASSWORD_64_POSTGRES}@db:5432/riffado
+      BETTER_AUTH_SECRET: ${SERVICE_HEX_64_AUTH}
+      API_TOKEN_HASH_SECRET: ${SERVICE_HEX_64_API_TOKEN}
+      APP_URL: ${APP_URL:?Set APP_URL to the public HTTPS URL}
+      ENCRYPTION_KEY: ${SERVICE_HEX_64_ENCRYPTION}
+      RATE_LIMIT_TRUST_PROXY_HEADERS: "true"
+      DISABLE_REGISTRATION: ${DISABLE_REGISTRATION:-false}
+      DISABLE_UPDATE_CHECK: ${DISABLE_UPDATE_CHECK:-false}
+      DEFAULT_STORAGE_TYPE: ${DEFAULT_STORAGE_TYPE:-local}
+      LOCAL_STORAGE_PATH: ${LOCAL_STORAGE_PATH:-/app/audio}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    volumes:
+      - riffado-audio:/app/audio
+      - riffado-storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/api/health',(r)=>process.exit(r.statusCode===200?0:1))",
+        ]
+      interval: 30s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  riffado-pgdata:
+  riffado-audio:
+  riffado-storage:
